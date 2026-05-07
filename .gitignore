@@ -1,0 +1,58 @@
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtualenv
+.venv/
+venv/
+env/
+ENV/
+
+# Testing & coverage
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.hypothesis/
+
+# IDEs / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Claude Code
+.claude/
+
+# Docker
+*.log
+
+# OS
+Thumbs.db
+desktop.ini

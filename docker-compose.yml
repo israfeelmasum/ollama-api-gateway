@@ -1,0 +1,104 @@
+# =============================================================================
+# Ollama API Gateway - Docker Compose
+# =============================================================================
+# Two deployment modes:
+#
+#   1) LOCAL / SIMPLE — comment out the `traefik` network blocks and labels
+#      below, then run:    docker compose up -d --build
+#      Access via http://localhost:8002 (API) and http://localhost:8502 (UI).
+#
+#   2) PRODUCTION — set DOMAIN in your .env (e.g. DOMAIN=example.com), make
+#      sure a Traefik reverse proxy is running on the external network named
+#      below (default: `traefik-public`), and run:
+#                          docker compose up -d --build
+#      Access via https://api.${DOMAIN} and https://ui.${DOMAIN}.
+# =============================================================================
+
+services:
+  llmapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ollama-gateway-api
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    ports:
+      - "8002:8000"
+    networks:
+      - internal
+      - traefik
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.ollama-api.rule=Host(`api.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.ollama-api.entrypoints=websecure"
+      - "traefik.http.routers.ollama-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ollama-api.loadbalancer.server.port=8000"
+
+  ollamaui:
+    build:
+      context: .
+      dockerfile: UIDockerfile
+    container_name: ollama-gateway-ui
+    restart: unless-stopped
+    depends_on:
+      - llmapi
+    ports:
+      - "8502:8501"
+    networks:
+      - internal
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.ollama-ui.rule=Host(`ui.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.ollama-ui.entrypoints=websecure"
+      - "traefik.http.routers.ollama-ui.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ollama-ui.loadbalancer.server.port=8501"
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    # Remove the `deploy.resources` block if you don't have an NVIDIA GPU.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - internal
+      - traefik
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.ollama-direct.rule=Host(`ollama.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.ollama-direct.entrypoints=websecure"
+      - "traefik.http.routers.ollama-direct.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ollama-direct.loadbalancer.server.port=11434"
+
+volumes:
+  ollama-data:
+
+networks:
+  internal:
+    driver: bridge
+  traefik:
+    name: traefik-public
+    external: true
