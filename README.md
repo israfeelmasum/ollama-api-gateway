@@ -7,6 +7,39 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](https://www.docker.com)
 
+![Architecture](docs/architecture.svg)
+
+---
+
+## 🎮 Try it instantly — Live Playground
+
+Open [`playground/index.html`](playground/index.html) in your browser. **No install. No build step.** A single static file connects to your gateway and lets you exercise every endpoint visually:
+
+![Playground](docs/playground-mockup.svg)
+
+```bash
+# After cloning & starting the stack:
+xdg-open playground/index.html         # Linux
+open playground/index.html             # macOS
+start playground/index.html            # Windows
+```
+
+The playground supports:
+- 💬 Chat completion with system prompt + temperature slider
+- ⚡ Token-by-token streaming
+- 📊 Single & 📦 batch embeddings (with vector preview + magnitude)
+- 🖼️ Vision (drag-and-drop image → base64 → analysis)
+- 📋 Model browser
+- 🛠️ Raw request builder for any custom endpoint
+
+Your API key is saved in `localStorage` so you only enter it once.
+
+---
+
+## 🔄 API request flow
+
+![API Flow](docs/api-flow.svg)
+
 ---
 
 ## Why this exists
@@ -28,7 +61,7 @@ Vanilla Ollama exposes an unauthenticated HTTP server on port 11434 — fine on 
 ## Quick start (local)
 
 ```bash
-git clone https://github.com/<your-org>/ollama-api-gateway.git
+git clone https://github.com/israfeelmasum/ollama-api-gateway.git
 cd ollama-api-gateway
 
 # Create your env file with at least one API key

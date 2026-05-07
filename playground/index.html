@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ollama API Gateway · Live Playground</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0f172a;--card:#1e293b;--border:#334155;--text:#f1f5f9;--muted:#94a3b8;
+    --accent:#10b981;--accent-2:#059669;--blue:#3b82f6;--red:#ef4444;--purple:#8b5cf6;--amber:#f59e0b;
+  }
+  html,body{height:100%}
+  body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:linear-gradient(135deg,#0f172a,#1e293b);color:var(--text);min-height:100vh;line-height:1.5}
+  header{padding:24px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-size:20px;font-weight:700}
+  header .badge{font-size:11px;background:rgba(16,185,129,.15);color:var(--accent);padding:4px 10px;border-radius:99px;border:1px solid rgba(16,185,129,.3)}
+  header .spacer{flex:1}
+  header a{color:var(--muted);font-size:13px;text-decoration:none}
+  header a:hover{color:var(--text)}
+  .container{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 73px)}
+  @media(max-width:900px){.container{grid-template-columns:1fr}}
+  .sidebar{padding:24px;border-right:1px solid var(--border);background:rgba(15,23,42,.5)}
+  .sidebar h3{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px}
+  .sidebar input{width:100%;padding:10px 12px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;font-size:13px;font-family:ui-monospace,Consolas,monospace}
+  .sidebar input:focus{outline:none;border-color:var(--accent)}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .status{margin-top:14px;padding:10px 12px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px}
+  .status.ok{background:rgba(16,185,129,.12);color:var(--accent);border:1px solid rgba(16,185,129,.3)}
+  .status.err{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+  .status.idle{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+  .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+  .nav{margin-top:24px}
+  .nav button{display:block;width:100%;text-align:left;padding:10px 12px;background:transparent;border:none;color:var(--muted);font-size:13px;border-radius:8px;cursor:pointer;margin-bottom:2px;font-family:inherit}
+  .nav button:hover{background:rgba(255,255,255,.04);color:var(--text)}
+  .nav button.active{background:rgba(16,185,129,.12);color:var(--accent)}
+  main{padding:28px;overflow-y:auto}
+  .panel{display:none}
+  .panel.active{display:block}
+  .panel h2{font-size:22px;margin-bottom:6px}
+  .panel .desc{color:var(--muted);font-size:14px;margin-bottom:20px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  @media(max-width:700px){.row{grid-template-columns:1fr}}
+  .label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
+  textarea,select,.txt{width:100%;padding:10px 12px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;font-size:13px;font-family:ui-monospace,Consolas,monospace}
+  textarea{min-height:80px;resize:vertical}
+  textarea:focus,select:focus,.txt:focus{outline:none;border-color:var(--accent)}
+  .btn{padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .btn:hover{background:var(--accent-2)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.secondary{background:var(--card);color:var(--text);border:1px solid var(--border)}
+  .btn.secondary:hover{background:#334155}
+  .response{margin-top:18px;background:#020617;border:1px solid var(--border);border-radius:8px;padding:16px;font-family:ui-monospace,Consolas,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;color:#cbd5e1;min-height:120px;max-height:400px;overflow-y:auto}
+  .response.empty{color:var(--muted);font-style:italic}
+  .response .key{color:#7dd3fc}
+  .response .str{color:#fbbf24}
+  .response .num{color:#a78bfa}
+  .response .stream{color:#10b981}
+  .pill{display:inline-block;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:600;margin-left:6px}
+  .pill.green{background:rgba(16,185,129,.15);color:var(--accent)}
+  .pill.red{background:rgba(239,68,68,.15);color:var(--red)}
+  .pill.amber{background:rgba(245,158,11,.15);color:var(--amber)}
+  .meta{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+  .slider{width:100%;-webkit-appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none}
+  .slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--accent);border-radius:50%;cursor:pointer}
+  .preset{font-size:11px;background:var(--card);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:99px;cursor:pointer;font-family:inherit;margin-right:6px;margin-top:6px;display:inline-block}
+  .preset:hover{background:#334155;color:var(--text)}
+  .hint{font-size:11px;color:var(--muted);margin-top:4px}
+  .footer{padding:18px 28px;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:12px}
+  .footer a{color:var(--accent);text-decoration:none}
+  .grid-three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:700px){.grid-three{grid-template-columns:1fr}}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px}
+  .stat .v{font-size:20px;font-weight:700}
+  .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .file-drop{border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .15s}
+  .file-drop:hover,.file-drop.drag{border-color:var(--accent);background:rgba(16,185,129,.05)}
+  .file-drop input{display:none}
+  .preview-img{max-width:100%;max-height:200px;border-radius:8px;margin-top:10px;border:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚀 Ollama API Gateway</h1>
+  <span class="badge">Live Playground</span>
+  <div class="spacer"></div>
+  <a href="https://github.com/israfeelmasum/ollama-api-gateway" target="_blank">GitHub →</a>
+</header>
+
+<div class="container">
+  <aside class="sidebar">
+    <h3>Configuration</h3>
+    <div class="field">
+      <label>API Base URL</label>
+      <input id="baseUrl" value="http://localhost:8002" />
+      <div class="hint">e.g. http://localhost:8002 or your prod URL</div>
+    </div>
+    <div class="field">
+      <label>API Key</label>
+      <input id="apiKey" type="password" placeholder="your-api-key" />
+    </div>
+    <button class="btn" id="testBtn" style="width:100%">Test Connection</button>
+    <div id="connStatus" class="status idle"><span class="dot"></span><span>Not connected</span></div>
+
+    <nav class="nav">
+      <h3 style="margin-top:24px">Endpoints</h3>
+      <button class="tab active" data-tab="chat">💬 Chat Completion</button>
+      <button class="tab" data-tab="stream">⚡ Streaming Chat</button>
+      <button class="tab" data-tab="embed">📊 Embeddings</button>
+      <button class="tab" data-tab="batch">📦 Batch Embeddings</button>
+      <button class="tab" data-tab="vision">🖼️ Vision</button>
+      <button class="tab" data-tab="models">📋 Models</button>
+      <button class="tab" data-tab="raw">🛠️ Raw Request</button>
+    </nav>
+  </aside>
+
+  <main>
+
+    <!-- CHAT -->
+    <section class="panel active" data-panel="chat">
+      <h2>Chat Completion <span class="pill green">POST /api/v1/chat/completions</span></h2>
+      <p class="desc">Send a multi-turn conversation and get a complete response.</p>
+      <div class="row">
+        <div>
+          <label class="label">Model</label>
+          <input class="txt" id="chatModel" value="llama3.2" />
+          <div>
+            <span class="preset" data-target="chatModel" data-val="llama3.2">llama3.2</span>
+            <span class="preset" data-target="chatModel" data-val="qwen3.5">qwen3.5</span>
+            <span class="preset" data-target="chatModel" data-val="gemma4">gemma4</span>
+            <span class="preset" data-target="chatModel" data-val="mistral">mistral</span>
+          </div>
+        </div>
+        <div>
+          <label class="label">Temperature: <span id="tempVal">0.7</span></label>
+          <input type="range" class="slider" id="chatTemp" min="0" max="2" step="0.1" value="0.7" />
+          <label class="label" style="margin-top:10px">Max tokens</label>
+          <input class="txt" id="chatMax" type="number" value="500" />
+        </div>
+      </div>
+      <label class="label">System message (optional)</label>
+      <textarea id="chatSystem">You are a helpful AI assistant. Keep responses concise.</textarea>
+      <label class="label" style="margin-top:14px">User message</label>
+      <textarea id="chatUser">What is machine learning? Explain in 2 sentences.</textarea>
+      <div style="margin-top:16px">
+        <button class="btn" id="sendChat">Send Request</button>
+      </div>
+      <div class="response empty" id="chatResp">Response will appear here…</div>
+      <div class="meta" id="chatMeta" style="display:none"></div>
+    </section>
+
+    <!-- STREAM -->
+    <section class="panel" data-panel="stream">
+      <h2>Streaming Chat <span class="pill amber">POST /api/v1/chat/stream</span></h2>
+      <p class="desc">Server-Sent Events. Tokens stream as the model generates them.</p>
+      <div class="row">
+        <div>
+          <label class="label">Model</label>
+          <input class="txt" id="streamModel" value="llama3.2" />
+        </div>
+        <div>
+          <label class="label">Temperature</label>
+          <input class="txt" id="streamTemp" type="number" step="0.1" value="0.7" />
+        </div>
+      </div>
+      <label class="label">Prompt</label>
+      <textarea id="streamPrompt">Write a short poem about coffee.</textarea>
+      <div style="margin-top:16px">
+        <button class="btn" id="sendStream">Start Stream</button>
+        <button class="btn secondary" id="stopStream">Stop</button>
+      </div>
+      <div class="response empty" id="streamResp">Tokens will stream here…</div>
+    </section>
+
+    <!-- EMBED -->
+    <section class="panel" data-panel="embed">
+      <h2>Embeddings <span class="pill green">POST /api/v1/embeddings</span></h2>
+      <p class="desc">Generate a vector representation of a single text.</p>
+      <div class="row">
+        <div>
+          <label class="label">Model</label>
+          <input class="txt" id="embedModel" value="nomic-embed-text" />
+          <div>
+            <span class="preset" data-target="embedModel" data-val="nomic-embed-text">nomic-embed-text</span>
+            <span class="preset" data-target="embedModel" data-val="qwen3-embedding">qwen3-embedding</span>
+          </div>
+        </div>
+        <div>
+          <label class="label">Expected dimensions</label>
+          <input class="txt" value="768" disabled />
+          <div class="hint">nomic-embed-text → 768d</div>
+        </div>
+      </div>
+      <label class="label">Input text</label>
+      <textarea id="embedText">The quick brown fox jumps over the lazy dog.</textarea>
+      <div style="margin-top:16px">
+        <button class="btn" id="sendEmbed">Generate Embedding</button>
+      </div>
+      <div class="grid-three" id="embedStats" style="display:none;margin-top:16px">
+        <div class="stat"><div class="l">Dimensions</div><div class="v" id="embDim">—</div></div>
+        <div class="stat"><div class="l">First Value</div><div class="v" id="embFirst">—</div></div>
+        <div class="stat"><div class="l">Magnitude</div><div class="v" id="embMag">—</div></div>
+      </div>
+      <div class="response empty" id="embedResp">Vector preview will appear here…</div>
+    </section>
+
+    <!-- BATCH -->
+    <section class="panel" data-panel="batch">
+      <h2>Batch Embeddings <span class="pill green">POST /api/v1/embeddings/batch</span></h2>
+      <p class="desc">Embed multiple texts in a single request — far faster than looping.</p>
+      <label class="label">Model</label>
+      <input class="txt" id="batchModel" value="nomic-embed-text" />
+      <label class="label" style="margin-top:14px">Texts (one per line)</label>
+      <textarea id="batchTexts" style="min-height:140px">First document about cats and their habits
+Second document about dogs and training
+Third document about birds and migration
+Fourth document about fish in coral reefs</textarea>
+      <div style="margin-top:16px">
+        <button class="btn" id="sendBatch">Generate Batch</button>
+      </div>
+      <div class="response empty" id="batchResp">Results will appear here…</div>
+    </section>
+
+    <!-- VISION -->
+    <section class="panel" data-panel="vision">
+      <h2>Vision <span class="pill green">POST /api/v1/vision/chat</span></h2>
+      <p class="desc">Upload an image and ask the model to describe or analyze it.</p>
+      <div class="row">
+        <div>
+          <label class="label">Model</label>
+          <input class="txt" id="visionModel" value="llava" />
+          <div>
+            <span class="preset" data-target="visionModel" data-val="llava">llava</span>
+            <span class="preset" data-target="visionModel" data-val="qwen3-vl">qwen3-vl</span>
+            <span class="preset" data-target="visionModel" data-val="llava:13b">llava:13b</span>
+          </div>
+        </div>
+        <div>
+          <label class="label">Prompt</label>
+          <input class="txt" id="visionPrompt" value="What do you see in this image?" />
+        </div>
+      </div>
+      <label class="label" style="margin-top:14px">Image</label>
+      <label class="file-drop" id="dropArea">
+        <input type="file" id="visionFile" accept="image/*" />
+        <div>📷 Click or drop an image here</div>
+        <div class="hint" style="margin-top:6px">PNG / JPG / WebP — encoded to base64 on the client</div>
+      </label>
+      <img class="preview-img" id="visionPreview" style="display:none" />
+      <div style="margin-top:16px">
+        <button class="btn" id="sendVision" disabled>Analyze Image</button>
+      </div>
+      <div class="response empty" id="visionResp">Description will appear here…</div>
+    </section>
+
+    <!-- MODELS -->
+    <section class="panel" data-panel="models">
+      <h2>Models <span class="pill green">GET /api/v1/models</span></h2>
+      <p class="desc">List all installed Ollama models, optionally filtered by type.</p>
+      <div class="row">
+        <div>
+          <label class="label">Filter by type</label>
+          <select class="txt" id="modelType">
+            <option value="">All</option>
+            <option value="text">Text</option>
+            <option value="vision">Vision</option>
+            <option value="embedding">Embedding</option>
+            <option value="code">Code</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:8px">
+          <button class="btn" id="listModels">List Models</button>
+          <button class="btn secondary" id="catalogModels">Get Catalog</button>
+        </div>
+      </div>
+      <div class="response empty" id="modelsResp">Model list will appear here…</div>
+    </section>
+
+    <!-- RAW -->
+    <section class="panel" data-panel="raw">
+      <h2>Raw Request <span class="pill red">Custom</span></h2>
+      <p class="desc">Send arbitrary requests — useful for testing new endpoints.</p>
+      <div class="row">
+        <div>
+          <label class="label">Method</label>
+          <select class="txt" id="rawMethod"><option>GET</option><option selected>POST</option><option>PUT</option><option>DELETE</option></select>
+        </div>
+        <div>
+          <label class="label">Endpoint path</label>
+          <input class="txt" id="rawPath" value="/api/v1/health/status" />
+        </div>
+      </div>
+      <label class="label">Body (JSON)</label>
+      <textarea id="rawBody" style="min-height:140px">{}</textarea>
+      <div style="margin-top:16px">
+        <button class="btn" id="sendRaw">Send Request</button>
+      </div>
+      <div class="response empty" id="rawResp">Response will appear here…</div>
+    </section>
+
+  </main>
+</div>
+
+<div class="footer">
+  Built with vanilla HTML + JavaScript. Open <code>playground/index.html</code> in your browser — no install needed. ·
+  <a href="https://github.com/israfeelmasum/ollama-api-gateway" target="_blank">github.com/israfeelmasum/ollama-api-gateway</a>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const baseUrl = () => $('baseUrl').value.trim().replace(/\/$/, '');
+const apiKey  = () => $('apiKey').value.trim();
+const headers = () => ({ 'Content-Type':'application/json', 'X-API-Key': apiKey() });
+
+// LocalStorage persistence
+['baseUrl','apiKey'].forEach(id=>{
+  const v = localStorage.getItem('oag_'+id); if (v) $(id).value = v;
+  $(id).addEventListener('input', () => localStorage.setItem('oag_'+id, $(id).value));
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.querySelector(`.panel[data-panel="${b.dataset.tab}"]`).classList.add('active');
+  });
+});
+
+// Presets
+document.querySelectorAll('.preset').forEach(p=>{
+  p.addEventListener('click', () => $(p.dataset.target).value = p.dataset.val);
+});
+
+// Connection status
+function setConn(state, msg) {
+  const e = $('connStatus');
+  e.className = 'status ' + state;
+  e.innerHTML = `<span class="dot"></span><span>${msg}</span>`;
+}
+
+$('testBtn').addEventListener('click', async () => {
+  setConn('idle', 'Testing…');
+  try {
+    const r = await fetch(`${baseUrl()}/api/v1/health`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    if (apiKey()) {
+      const r2 = await fetch(`${baseUrl()}/api/v1/models`, { headers: headers() });
+      if (r2.status === 401 || r2.status === 403) {
+        setConn('err', 'Reachable but key invalid');
+        return;
+      }
+    }
+    setConn('ok', `Connected · ollama=${data.ollama_reachable}`);
+  } catch (e) { setConn('err', 'Failed: ' + e.message); }
+});
+
+// Pretty JSON
+function prettyJSON(obj){
+  const s = JSON.stringify(obj, null, 2);
+  return s.replace(/(".*?"):/g,'<span class="key">$1</span>:')
+          .replace(/: (".*?")(,?)/g,': <span class="str">$1</span>$2')
+          .replace(/: (-?\d+\.?\d*)(,?)/g,': <span class="num">$1</span>$2');
+}
+function showResp(el, data, meta){
+  el.classList.remove('empty');
+  el.innerHTML = typeof data === 'string' ? data : prettyJSON(data);
+  if (meta) {
+    const m = $(el.id.replace('Resp','Meta'));
+    if (m) { m.style.display = 'flex'; m.innerHTML = meta; }
+  }
+}
+function showErr(el, e){ el.classList.remove('empty'); el.innerHTML = `<span style="color:#ef4444">❌ ${e}</span>`; }
+
+// CHAT
+$('chatTemp').addEventListener('input', e => $('tempVal').textContent = e.target.value);
+$('sendChat').addEventListener('click', async () => {
+  const messages = [];
+  if ($('chatSystem').value.trim()) messages.push({role:'system', content:$('chatSystem').value});
+  messages.push({role:'user', content:$('chatUser').value});
+  const body = {
+    model: $('chatModel').value,
+    messages,
+    temperature: parseFloat($('chatTemp').value),
+    max_tokens: parseInt($('chatMax').value, 10) || undefined
+  };
+  $('sendChat').disabled = true; $('chatResp').classList.remove('empty');
+  $('chatResp').textContent = '⏳ Generating…';
+  const t0 = performance.now();
+  try {
+    const r = await fetch(`${baseUrl()}/api/v1/chat/completions`, {method:'POST', headers:headers(), body:JSON.stringify(body)});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || `HTTP ${r.status}`);
+    const ms = Math.round(performance.now() - t0);
+    const meta = `<span>⏱ ${ms} ms</span><span>📝 ${data.eval_count||'?'} tokens</span><span>🤖 ${data.model||body.model}</span>`;
+    showResp($('chatResp'), data, meta);
+  } catch (e) { showErr($('chatResp'), e.message); }
+  $('sendChat').disabled = false;
+});
+
+// STREAM
+let streamCtrl = null;
+$('sendStream').addEventListener('click', async () => {
+  const body = {
+    model: $('streamModel').value,
+    messages: [{role:'user', content:$('streamPrompt').value}],
+    temperature: parseFloat($('streamTemp').value)
+  };
+  streamCtrl = new AbortController();
+  $('streamResp').classList.remove('empty');
+  $('streamResp').innerHTML = '<span class="stream">▶ Streaming…</span>\n\n';
+  try {
+    const r = await fetch(`${baseUrl()}/api/v1/chat/stream`, {method:'POST', headers:headers(), body:JSON.stringify(body), signal:streamCtrl.signal});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let acc = '';
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      const chunk = dec.decode(value);
+      chunk.split('\n').forEach(line => {
+        if (!line.trim()) return;
+        try {
+          const data = JSON.parse(line.replace(/^data:\s*/,''));
+          const c = data?.message?.content ?? data?.content ?? data?.response ?? '';
+          if (c) acc += c;
+        } catch { acc += chunk; }
+      });
+      $('streamResp').textContent = acc;
+    }
+    $('streamResp').textContent = acc + '\n\n✓ Stream complete';
+  } catch (e) {
+    if (e.name !== 'AbortError') showErr($('streamResp'), e.message);
+  }
+});
+$('stopStream').addEventListener('click', () => streamCtrl?.abort());
+
+// EMBED
+$('sendEmbed').addEventListener('click', async () => {
+  const body = { model: $('embedModel').value, input: $('embedText').value };
+  $('sendEmbed').disabled = true;
+  try {
+    const r = await fetch(`${baseUrl()}/api/v1/embeddings`, {method:'POST', headers:headers(), body:JSON.stringify(body)});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'HTTP ' + r.status);
+    const v = data.embeddings?.[0] || [];
+    $('embedStats').style.display = 'grid';
+    $('embDim').textContent = v.length;
+    $('embFirst').textContent = (v[0]||0).toFixed(4);
+    $('embMag').textContent = Math.sqrt(v.reduce((a,b)=>a+b*b,0)).toFixed(4);
+    showResp($('embedResp'), { model:data.model, dimensions:v.length, preview:v.slice(0,8).map(x=>+x.toFixed(4)) });
+  } catch (e) { showErr($('embedResp'), e.message); }
+  $('sendEmbed').disabled = false;
+});
+
+// BATCH
+$('sendBatch').addEventListener('click', async () => {
+  const inputs = $('batchTexts').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const body = { model: $('batchModel').value, inputs };
+  try {
+    const r = await fetch(`${baseUrl()}/api/v1/embeddings/batch`, {method:'POST', headers:headers(), body:JSON.stringify(body)});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'HTTP ' + r.status);
+    const summary = (data.embeddings||[]).map((e,i) => ({
+      index: i,
+      text: (e.text||inputs[i]).slice(0,40)+'…',
+      dimensions: (e.embedding||e).length || 0
+    }));
+    showResp($('batchResp'), { count: summary.length, results: summary });
+  } catch (e) { showErr($('batchResp'), e.message); }
+});
+
+// VISION
+let imgB64 = null;
+const drop = $('dropArea');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));
+drop.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+$('visionFile').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(f) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    imgB64 = e.target.result.split(',')[1];
+    $('visionPreview').src = e.target.result;
+    $('visionPreview').style.display = 'block';
+    $('sendVision').disabled = false;
+  };
+  reader.readAsDataURL(f);
+}
+
+$('sendVision').addEventListener('click', async () => {
+  if (!imgB64) return;
+  const body = { model: $('visionModel').value, prompt: $('visionPrompt').value, images: [imgB64] };
+  $('sendVision').disabled = true;
+  $('visionResp').classList.remove('empty');
+  $('visionResp').textContent = '⏳ Analyzing image…';
+  try {
+    const r = await fetch(`${baseUrl()}/api/v1/vision/chat`, {method:'POST', headers:headers(), body:JSON.stringify(body)});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'HTTP ' + r.status);
+    showResp($('visionResp'), data);
+  } catch (e) { showErr($('visionResp'), e.message); }
+  $('sendVision').disabled = false;
+});
+
+// MODELS
+async function fetchModels(catalog=false) {
+  const path = catalog ? '/api/v1/models/catalog' : `/api/v1/models${$('modelType').value?'?type='+$('modelType').value:''}`;
+  try {
+    const r = await fetch(`${baseUrl()}${path}`, {headers: headers()});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'HTTP ' + r.status);
+    showResp($('modelsResp'), data);
+  } catch (e) { showErr($('modelsResp'), e.message); }
+}
+$('listModels').addEventListener('click', () => fetchModels(false));
+$('catalogModels').addEventListener('click', () => fetchModels(true));
+
+// RAW
+$('sendRaw').addEventListener('click', async () => {
+  const method = $('rawMethod').value;
+  const path = $('rawPath').value;
+  const opts = { method, headers: headers() };
+  if (method !== 'GET' && method !== 'DELETE') {
+    try { JSON.parse($('rawBody').value); opts.body = $('rawBody').value; }
+    catch { return showErr($('rawResp'), 'Invalid JSON in body'); }
+  }
+  try {
+    const r = await fetch(`${baseUrl()}${path}`, opts);
+    const text = await r.text();
+    let data; try { data = JSON.parse(text); } catch { data = text; }
+    showResp($('rawResp'), { status: r.status, response: data });
+  } catch (e) { showErr($('rawResp'), e.message); }
+});
+</script>
+
+</body>
+</html>
